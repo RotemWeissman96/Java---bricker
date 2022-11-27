@@ -1,0 +1,41 @@
+rotem.weissman
+208306555
+
+Strategies design:
+i decided to use decorator as the solution for the multiple strategies. it reminded me the problem of the
+pizzas in the lab. every time a brick is hit, the onCollideEnter function will do the extra strategy and then
+the strategy of the current object. Also, when the extra strategy is null, the default strategy is activated,
+that because the brick must disappear for every collision.
+I felt like its a lot easier and more readable to design the strategies this way then to use a very large
+inheritance tree which will include a different class to each possible strategy combination.
+
+I managed the strategies amount and probability distribution in a function called createCollisionStrategy and
+some helpers for each strategy. The one to talk about is the double strategy helper which calls
+createCollisionStrategy with recursion. in order not to call double more then twice i added a variable that
+counts the amount of times double is called and managed the recursion calls accordingly. all i needed to do is
+to pass another variable that represent how many strategies are available and i orginized the enum in a way
+that regular is last and double is second last. so when 6 is passed all strategies are available, but if 4 is
+passed for example all strategies are available but the double and regular - as needed when double was choosen
+ twice already.
+
+
+class Ball:
+added a new constructor with another parameter - Counter.
+    the counter, counts the number of collisions the ball did, in order to exit the special camera mode.
+
+ExtraBall:
+i have decided to create a extraBall extends Ball class for the mock ball. I did it because the mock ball has
+a very similar behaviour as the main ball, with the exception of what it does when it leaves the screen.
+
+ExtraPaddle:
+I have decided to create a new class that extends Paddle for the extra paddle. I did it because the extra
+paddle has a very similar behaviour as the main paddle, with the exception of that it has to count the
+collisions in order to delete it in time.
+
+GraphicLifeCounter:
+added another constructor in order to receive the maximum number of lives the player can achieve, i think it
+should be in the game rules and not in the GraphicLifeCounter, if no number is entered the default is 4 as
+described in the assignment.
+
+
+
