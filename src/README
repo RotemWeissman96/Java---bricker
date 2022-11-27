@@ -1,41 +1,111 @@
 rotem.weissman
 208306555
 
+============file description=============
+
+BrickerGameManager - Inherits GameManager, the main game class, the rules and the game object are defined here
+
+Paddle - Inherit from GameObject, representing the paddle
+NumericLifeCounter - inherit from GameObject, this class responsible for the numeric representation of lives
+    left.
+GraphicLifeCounter - inherit from GameObject, draws the number of lives at the screen with graphic hearts
+FallingHeart - inherit from GameObject, the class is responsible for the hearts that fall in the extra life
+    strategy
+ExtraPaddle - inherit from GameObject, this class implement the paddle that appears at the middle of the
+    screen when extra paddle strategy is invoked
+ExtraBall - inherit from GameObject, this class handles the mock balls from the extra balls strategy, same
+    as regular ball but does not drain lives and when exiting the screen the mock balls get removed
+CameraChangeController - inherit from GameObject, this game object is made to bring the camera back to normal
+    after a number of times the ball collides
+Brick - inherit from GameObject, a game object representing a brick
+Ball - inherit from GameObject, a GameObject representing a ball
+
+CollisionStrategy - part of the decorator design - used for polymorphism with all kinds of collision
+    strategies
+ExtraStrategy - decorator - abstract class for the special strategies (not including the remove brick)
+RegularCollisionStrategy - a basic strategy that removes the brick after being hit
+ExtraPaddleStrategy -  an extra strategy to activate when a brick was hit. an extra paddle in the middle of
+    the screen appears
+ExtraLifeStrategy - a strategy to activate when a brick was hit. an extra life is falling from the brick
+ExtraBallsStrategy - a strategy to activate when a brick was hit. adds 3 mock balls to the game
+ChangeCameraStrategy - a strategy to activate when a brick was hit. changes the camera, makes it follow the
+    ball
+
+
+=======design========
+
 Strategies design:
-i decided to use decorator as the solution for the multiple strategies. it reminded me the problem of the
+i decided to use decorator as the solution for the multiple strategies. It reminded me the problem of the
 pizzas in the lab. every time a brick is hit, the onCollideEnter function will do the extra strategy and then
-the strategy of the current object. Also, when the extra strategy is null, the default strategy is activated,
-that because the brick must disappear for every collision.
+the strategy of the current object. every strategy (in this particular game) starts as a regular strategy so
+that every brick disappear.
+
 I felt like its a lot easier and more readable to design the strategies this way then to use a very large
-inheritance tree which will include a different class to each possible strategy combination.
+inheritance tree which will include a different class to each possible strategy combination. Also my code is
+more convenience to change according to different game rules. all you ned to do is to change the function in
+in the main class which creates the bricks and not the data structure that handles the strategies. for example
+if you want to enable more then 2 double per brick.
 
 I managed the strategies amount and probability distribution in a function called createCollisionStrategy and
 some helpers for each strategy. The one to talk about is the double strategy helper which calls
 createCollisionStrategy with recursion. in order not to call double more then twice i added a variable that
 counts the amount of times double is called and managed the recursion calls accordingly. all i needed to do is
-to pass another variable that represent how many strategies are available and i orginized the enum in a way
+to pass another variable that represent how many strategies are available and i organized the enum in a way
 that regular is last and double is second last. so when 6 is passed all strategies are available, but if 4 is
-passed for example all strategies are available but the double and regular - as needed when double was choosen
+passed for example all strategies are available but the double and regular - as needed when double was chosen
  twice already.
-
-
-class Ball:
-added a new constructor with another parameter - Counter.
-    the counter, counts the number of collisions the ball did, in order to exit the special camera mode.
-
-ExtraBall:
-i have decided to create a extraBall extends Ball class for the mock ball. I did it because the mock ball has
-a very similar behaviour as the main ball, with the exception of what it does when it leaves the screen.
-
-ExtraPaddle:
-I have decided to create a new class that extends Paddle for the extra paddle. I did it because the extra
-paddle has a very similar behaviour as the main paddle, with the exception of that it has to count the
-collisions in order to delete it in time.
 
 GraphicLifeCounter:
 added another constructor in order to receive the maximum number of lives the player can achieve, i think it
 should be in the game rules and not in the GraphicLifeCounter, if no number is entered the default is 4 as
 described in the assignment.
+
+=====inheritance====
+Ball -> ExtraBall
+Paddle -> ExtraPaddle
+ExtraStrategy -> ExtraPaddleStrategy/ExtraLifeStrategy/ExtraBallsStrategy/ChangeCameraStrategy
+(Interface)CollisionStrategy -> ExtraStrategy/RegularCollisionStrategy
+
+====Implementation issues====
+paddle and camera collision counters - I needed to find a way to count the amount of collision each of those
+objects had, and this counter needs to effect the behaviour of the strategies, so i decided to use a static
+field to share a counter with all the bricks who has this strategies. this way the strategies wont be called
+twice when already activated.
+choosing the right design for the strategies so my code wont need to be rewritten if the game rules changes. i
+ also implemented the graphic dimensions in a way that its very easy to change the size, amount, speed and
+ other properties of the window and the objects.
+
+====questions====
+1-2.
+ExtraBalls
+ I have decided to create a extraBall extends Ball class for the mock ball. I did it because the mock ball has
+ a very similar behaviour as the main ball, with the exception of what it does when it leaves the screen.
+ExtraPaddle:
+ I have decided to create a new class that extends Paddle for the extra paddle. I did it because the extra
+ paddle has a very similar behaviour as the main paddle, with the exception of that it has to count the
+ collisions in order to delete it in time.
+ I added a static counter in order to prevent a second paddle to appear. Thanks to the static counter, every
+ brick with this behaviour knows that the last paddle is still alive if the counter is less then 4. I also
+ override the function should collide with, in order to prevent collision with the wall.
+CameraChange:
+  class Ball: added a new constructor with another parameter - Counter.
+  the counter, counts the number of collisions the ball did, in order to exit the special camera mode. The
+  strategy has a reference to the main ball in order to know if a previous camera change is already activated,
+  it knows it according to the collision counter in the ball. I added a public function to get the number of
+  collisions.
+Falling heart:
+ I changed the methods of the numeric and graphic lives counters to support adding lives and not only reducing
+ I also changed the the function should collide with in order to prevent it from colliding with anything but
+ paddles, and even if it is a paddle it will collide only with a paddle which positioned under the quarter of
+  the y dimension of the screen.
+
+3. If double is chosen, i have a recursive function that calls back to createCollisionStrategy. The recursive
+ changes its behavior when double is called one last before last and at the last time available. At those
+ times if call createCollisionStrategy with only 4 options so that double cannot be chosen again.
+
+4. I had answered this question at the design part. Mainly, I picked the decorator design in order to enable
+     unlimited amount of strategies to a brick (in a different game with different rules), and to avoid a very
+     complicated inheritance tree with a lot of code duplicating.
 
 
 

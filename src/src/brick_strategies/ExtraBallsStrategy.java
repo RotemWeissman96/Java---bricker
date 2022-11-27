@@ -2,21 +2,16 @@ package src.brick_strategies;
 
 import danogl.GameObject;
 import danogl.collisions.GameObjectCollection;
-import danogl.gui.ImageReader;
 import danogl.gui.Sound;
-import danogl.gui.SoundReader;
 import danogl.gui.rendering.Renderable;
 import danogl.util.Counter;
 import danogl.util.Vector2;
-import src.gameobjects.Ball;
 import src.gameobjects.ExtraBall;
-
-import java.util.Random;
 
 /**
  * a strategy to activate when a brick was hit. adds 3 mock balls to the game
  */
-public class ExtraBallsStrategy extends CollisionStrategy{
+public class ExtraBallsStrategy extends ExtraStrategy {
     private static final int NUMBER_OF_BALLS = 3;
     private final Vector2 dimensions;
     private final Renderable renderable;
@@ -51,7 +46,6 @@ public class ExtraBallsStrategy extends CollisionStrategy{
     @Override
     public void onCollision(GameObject collidedObj, GameObject colliderObj, Counter bricksCounter) {
         super.onCollision(collidedObj, colliderObj, bricksCounter);
-
         createBalls(collidedObj);
     }
 

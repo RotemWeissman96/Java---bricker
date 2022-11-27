@@ -48,7 +48,7 @@ public class FallingHeart extends GameObject {
     @Override
     public void update(float deltaTime) {
         super.update(deltaTime);
-        if (this.getCenter().y() == windowDimension.y()) {
+        if (this.getCenter().y() >= windowDimension.y()) {
            gameObjects.removeGameObject(this);
         }
     }

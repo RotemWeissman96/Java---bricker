@@ -13,8 +13,9 @@ import danogl.util.Vector2;
  * is invoked
  */
 public class ExtraPaddle extends Paddle{
-    private Counter collisionCounter;
-    private GameObjectCollection gameObjects;
+    private final Counter collisionCounter;
+    private static final int COLLISIONS_TILL_DELETE = 3;
+    private final GameObjectCollection gameObjects;
 
     /**
      * Construct a new GameObject instance.
@@ -30,9 +31,9 @@ public class ExtraPaddle extends Paddle{
      */
     public ExtraPaddle(Vector2 topLeftCorner, Vector2 dimensions, Renderable renderable,
                        UserInputListener inputListener, Vector2 windowDimensions, int minDistFromEdge,
-                        Counter collisionCounter, GameObjectCollection gameObjects) {
+                        GameObjectCollection gameObjects) {
         super(topLeftCorner, dimensions, renderable, inputListener, windowDimensions, minDistFromEdge);
-        this.collisionCounter = collisionCounter;
+        this.collisionCounter = new Counter(COLLISIONS_TILL_DELETE);
         this.gameObjects = gameObjects;
     }
 
@@ -52,5 +53,13 @@ public class ExtraPaddle extends Paddle{
                 gameObjects.removeGameObject(this);
             }
         }
+    }
+
+    public int getCollisionCount() {
+        return collisionCounter.value();
+    }
+
+    public void collisionCounterReset(){
+        collisionCounter.reset();
     }
 }

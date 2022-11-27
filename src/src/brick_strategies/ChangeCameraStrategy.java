@@ -13,7 +13,7 @@ import src.gameobjects.CameraChangeController;
 /**
  * a strategy to activate when a brick was hit. changes the camera, makes it follow the ball
  */
-public class ChangeCameraStrategy extends CollisionStrategy {
+public class ChangeCameraStrategy extends ExtraStrategy {
     private static final int MAX_COLLIDES = 4;
 
     private final Counter ballCollisionCounter;
@@ -46,7 +46,7 @@ public class ChangeCameraStrategy extends CollisionStrategy {
      * changes the camera, and resets the balls collides counter
      * @param collidedObj the brick
      * @param colliderObj a ball
-     * @param bricksCounter counts the number of bricks in thee game
+     * @param bricksCounter counts the number of bricks in the game
      */
     @Override
     public void onCollision(GameObject collidedObj, GameObject colliderObj, Counter bricksCounter) {

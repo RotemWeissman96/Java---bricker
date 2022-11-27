@@ -1,19 +1,15 @@
 package src;
-
+import danogl.components.CoordinateSpace;
 import src.brick_strategies.*;
 import danogl.GameManager;
 import danogl.GameObject;
 import danogl.collisions.Layer;
 import danogl.gui.*;
-import danogl.gui.rendering.RectangleRenderable;
 import danogl.gui.rendering.Renderable;
 import danogl.util.Counter;
 import danogl.util.Vector2;
 import src.gameobjects.*;
-
-import java.awt.*;
 import java.util.Random;
-
 import static java.lang.Math.floor;
 
 /**
@@ -23,8 +19,6 @@ public class BrickerGameManager extends GameManager {
     // border dimensions
     private static final int BORDER_WIDTH = 50;
     private static final Renderable BORDER_RENDERABLE = null;
-           // new RectangleRenderable(new Color(80, 140, 250));
-    // paddle dimension
     public static final int PADDLE_HEIGHT = 20;
     private static final int PADDLE_WIDTH = 100;
     public static final int PADDLE_FLOAT = 10;
@@ -47,7 +41,7 @@ public class BrickerGameManager extends GameManager {
     private UserInputListener inputListener;
 
 
-    private enum ExtraStrategies {BALLS, PADDLE, CAMERA, LIFE, DOUBLE, REGULAR;}
+    private enum ExtraStrategies {BALLS, PADDLE, CAMERA, LIFE, DOUBLE, REGULAR}
     private Counter ballCollidesCounter;
     private Counter brickCounter;
     private Ball ball;
@@ -56,12 +50,10 @@ public class BrickerGameManager extends GameManager {
     private Counter livesCounter;
 
 
-
     public BrickerGameManager(String windowTitle, Vector2 windowDimensions) {
         super(windowTitle, windowDimensions);
         this.ball = null;
         this.brickCounter = null;
-
     }
 
     /**
@@ -130,7 +122,9 @@ public class BrickerGameManager extends GameManager {
      */
     private void createBackground() {
         Renderable backgroundImage = imageReader.readImage("assets/DARK_BG2_small.jpeg", false);
-        GameObject background = new GameObject(Vector2.ZERO, windowDimensions, backgroundImage);
+        GameObject background = new GameObject(Vector2.ZERO, windowController.getWindowDimensions(),
+                backgroundImage);
+        background.setCoordinateSpace(CoordinateSpace.CAMERA_COORDINATES);
         this.gameObjects().addGameObject(background, Layer.BACKGROUND);
     }
 
@@ -257,8 +251,9 @@ public class BrickerGameManager extends GameManager {
                 (int)floor(windowDimensions.y()*BRICKS_PORTION/BRICK_ROW));
         for (int x = SIDE_BUFFER; x < windowDimensions.x() - dimensions.x(); x += dimensions.x()+1) {
             for (int y = TOP_BUFFER; y < TOP_BUFFER+BRICK_ROW*dimensions.y(); y+=dimensions.y()+1){
-                CollisionStrategy collisionStrategy = createCollisionStrategy(null,
-                        ExtraStrategies.values().length, 0);
+                RegularCollisionStrategy regularCollision = new RegularCollisionStrategy(gameObjects());
+                CollisionStrategy collisionStrategy = createCollisionStrategy(regularCollision,
+                        ExtraStrategies.values().length, new Counter(0));
                 GameObject brick = new Brick(new Vector2(x, y), dimensions, brickImage, collisionStrategy,
                         brickCounter);
                 gameObjects().addGameObject(brick);
@@ -274,28 +269,60 @@ public class BrickerGameManager extends GameManager {
      * @return the randomly constructed strategy
      */
     public CollisionStrategy createCollisionStrategy(CollisionStrategy strategy,
-                                                     int numberOfStrategiesToChoose,
-                                                     int doubleChosen){
+                                                            int numberOfStrategiesToChoose,
+                                                            Counter doubleChosen){
         CameraChangeController cameraChangeObject = new CameraChangeController(this, ballCollidesCounter);
         gameObjects().addGameObject(cameraChangeObject, Layer.UI);
         Random rand = new Random();
         switch (ExtraStrategies.values()[rand.nextInt(numberOfStrategiesToChoose)]) {
             case BALLS:
+                System.out.print("BALLS ");
                 return createExtraBallsStrategy(strategy);
             case LIFE:
+                System.out.print("LIFE ");
                 return createExtraLifeStrategy(strategy);
             case CAMERA:
+                System.out.print("CAMERA ");
                 return createChangeCameraStrategy(strategy);
             case PADDLE:
+                System.out.print("PADDLE ");
                 return createExtraPaddleStrategy(strategy);
             case DOUBLE:
-                doubleChosen++;
+                System.out.print("DOUBLE! ");
+                doubleChosen.increment();
                 return doubleStrategy(strategy, doubleChosen);
             case REGULAR:
-                return new CollisionStrategy(this.gameObjects(), strategy);
+                System.out.print("REGULAR ");
+                return strategy;
         }
 
         return null;
+    }
+
+    /**
+     * handles the recursion calls for createCollisionStrategy when double strategies is chosen
+     * @param strategy the current strategy
+     * @param doubleChosen number of time double strategy was chosen for the current brick
+     * @return the strategy after assigning the randomized behaviour
+     */
+    private CollisionStrategy doubleStrategy(CollisionStrategy strategy, Counter doubleChosen) {
+        int numberOfStrategiesToChooseFrom = ExtraStrategies.values().length - 1;
+        if (doubleChosen.value() == 1) { // second to last double available
+            strategy = createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom, doubleChosen);
+            if (doubleChosen.value() == 2)
+                // if double was chosen last line, don't choose double again
+                return createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom - 1, doubleChosen);
+            else
+                return createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom + 1, doubleChosen);
+        }
+        if (doubleChosen.value() == 2) {
+            // if double chosen = 2 then double was chosen twice already, don't choose it again
+            strategy = createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom - 1, doubleChosen);
+            return createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom - 1, doubleChosen);
+        }
+        //if double was chosen but not last or second to last available you can choose another double twice
+        strategy = createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom , doubleChosen);
+        return createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom , doubleChosen);
     }
 
     /**
@@ -347,26 +374,6 @@ public class BrickerGameManager extends GameManager {
                 ballCollidesCounter);
     }
 
-    /**
-     * handles the recursion calls for createCollisionStrategy when double strategies is chosen
-     * @param strategy the current strategy
-     * @param doubleChosen number of time double strategy was chosen for the current brick
-     * @return the strategy after assigning the randomized behaviour
-     */
-    private CollisionStrategy doubleStrategy(CollisionStrategy strategy, int doubleChosen) {
-        int numberOfStrategiesToChooseFrom = ExtraStrategies.values().length - 1;
-        if (doubleChosen == 1) {
-            strategy = createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom, doubleChosen);
-            if (strategy == null) // if double was chosen last line, don't choose double again
-                return createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom - 1, doubleChosen);
-            else
-                return createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom, doubleChosen);
-        }
-        // if double chosen = 2 then double was chosen twice already, don't choose it again
-        strategy = createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom-1, doubleChosen);
-        return createCollisionStrategy(strategy, numberOfStrategiesToChooseFrom-1, doubleChosen);
-
-    }
 
     public static void main(String[] args) {
         new BrickerGameManager("Bouncing Ball", new Vector2(1000, 700)).run();
